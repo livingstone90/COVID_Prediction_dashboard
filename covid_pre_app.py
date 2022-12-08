@@ -312,12 +312,15 @@ def flatten(arr):
     return a
 
 
+graph1 = [world_cases, world_confirmed_avg, total_deaths, world_death_avg]
 #graphs = list([world_cases, total_deaths])
 
-world_graphing = st.sidebar.selectbox(
-    "Select the graph here : ",
-    'graphs'
-)
+# world_graphing1 = st.sidebar.selectbox(
+#"Select the graph here : ",
+
+#{'world': [world_cases]}
+# )
+
 
 adjusted_dates = adjusted_dates.reshape(1, -1)[0]
 with col1:
