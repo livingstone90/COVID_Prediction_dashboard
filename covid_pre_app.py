@@ -210,6 +210,10 @@ X_train_confirmed, X_test_confirmed, y_train_confirmed, y_test_confirmed = train
 
 col1, col2 = st.columns(2)
 
+c1 = st.container()
+c2 = st.container()
+c3 = st.container()
+
 # svm_confirmed = svm_search.best_estimator_
 svm_confirmed = SVR(shrinking=True, kernel='poly',
                     gamma=0.01, epsilon=1, degree=3, C=0.1)
@@ -410,8 +414,8 @@ with col2:
 
     st.pyplot(plt)
 
-st.subheader('Country Specific Graphs')
-st.write("Unlike the previous section, we are taking a look at specific countries. This allows us to examine covid at a more localized level. Feel free to change/edit this list to visulize the countries of your choice.")
+#st.subheader('Country Specific Graphs')
+#st.write("Unlike the previous section, we are taking a look at specific countries. This allows us to examine covid at a more localized level. Feel free to change/edit this list to visulize the countries of your choice.")
 
 
 def country_plot(x, y1, y2, y3, country):
@@ -420,8 +424,8 @@ def country_plot(x, y1, y2, y3, country):
     confirmed_increase_avg = moving_average(y2, window)
     death_increase_avg = moving_average(y3, window)
     SIZE = (12, 8)
+    with st.expander(f'Country Specific Graphs, now viewing cases for {add_selectbox}'):
 
-    with col1:
         plt.figure(figsize=SIZE)
         plt.plot(x, y1)
         plt.plot(x, confirmed_avg, color='red', linestyle='dashed')
@@ -435,10 +439,10 @@ def country_plot(x, y1, y2, y3, country):
         plt.show()
         st.pyplot(plt)
 
-    with col2:
         plt.figure(figsize=SIZE)
         plt.bar(x, y2)
-        plt.plot(x, confirmed_increase_avg, color='red', linestyle='dashed')
+        plt.plot(x, confirmed_increase_avg,
+                 color='red', linestyle='dashed')
         plt.legend(['Moving Average {} Days'.format(
             window), '{} Daily Increase in Confirmed Cases'.format(country)], prop={'size': 20})
         plt.title('{} Daily Increases in Confirmed Cases'.format(
@@ -450,7 +454,6 @@ def country_plot(x, y1, y2, y3, country):
         plt.show()
         st.pyplot(plt)
 
-    with col1:
         plt.figure(figsize=SIZE)
         plt.bar(x, y3)
         plt.plot(x, death_increase_avg, color='red', linestyle='dashed')
@@ -463,6 +466,7 @@ def country_plot(x, y1, y2, y3, country):
         plt.yticks(size=20)
         plt.show()
         st.pyplot(plt)
+
 
 # helper function for getting a country's total covid cases and deaths
 
@@ -505,24 +509,30 @@ country_visualizations(add_selectbox)
 # compare_countries = ['India', 'US', 'Brazil',
 # 'Russia', 'United Kingdom', 'France']
 
-compare_countries = st.sidebar.multiselect(
-    'Select the countries to compare :',
-    unique_countries)
+# compare_countries = st.sidebar.multiselect(
+#'Select the countries to compare :',
+# unique_countries)
 
 graph_name = ['Coronavirus Confirmed Cases', 'Coronavirus Confirmed Deaths']
 
-for num in range(2):
-    plt.figure(figsize=(12, 8))
-    for country in compare_countries:
-        plt.plot(get_country_info(country)[num])
-    plt.legend(compare_countries, prop={'size': 20})
-    plt.xlabel('Days since 1/22/2020', size=30)
-    plt.ylabel('# of Cases', size=30)
-    plt.title(graph_name[num], size=30)
-    plt.xticks(size=20)
-    plt.yticks(size=20)
-    plt.show()
-    st.pyplot(plt)
+with st.expander('Compare coronavirus cases for different countries'):
+    st.subheader("Coronavirus cases for different countries")
+    compare_countries = st.multiselect(
+        'Select the countries to compare :',
+        unique_countries)
+
+    for num in range(2):
+        plt.figure(figsize=(12, 8))
+        for country in compare_countries:
+            plt.plot(get_country_info(country)[num])
+        plt.legend(compare_countries, prop={'size': 20})
+        plt.xlabel('Days since 1/22/2020', size=30)
+        plt.ylabel('# of Cases', size=30)
+        plt.title(graph_name[num], size=30)
+        plt.xticks(size=20)
+        plt.yticks(size=20)
+        plt.show()
+        st.pyplot(plt)
 
 
 def plot_predictions(x, y, pred, algo_name, color):
@@ -539,56 +549,72 @@ def plot_predictions(x, y, pred, algo_name, color):
     st.pyplot(plt)
 
 
-st.subheader('Predictions for confirmed coronavirus cases worldwide')
+with st.expander('Predictions for confirmed coronavirus cases worldwide'):
+    st.markdown("""These three models predict future covid cases on a global level. 
+    These are constructed to use the latest window of data to predict the current trend.
+    The prediction models include : Support Vector Machine Polynomial Regression Bayesian Ridge Regression""")
 
-st.text('These three models predict future covid cases on a global level. These are constructed to use the latest window of data to predict the current trend.The prediction models include : Support Vector Machine Polynomial Regression Bayesian Ridge Regression')
+    preds = {
+        'SVM Predictions': svm_pred,
+        'Polynomial Regression Predictions': linear_pred,
+        'Bayesian Ridge Regression Predictions': bayesian_pred,
+    }
 
-model_predict = st.sidebar.selectbox(
-    "Select the model to predict : ",
-    ['SVM Predictions', 'Polynomial Regression Predictions',
-        'Bayesian Ridge Regression Predictions']
-)
+    model_predict = st.sidebar.selectbox(
+        "Select the model to predict : ", list(preds.keys()))
 
+# ['SVM Predictions', 'Polynomial Regression Predictions',
+    # 'Bayesian Ridge Regression Predictions']
+    if model_predict == 'SVM Predictions':
+        plot_predictions(adjusted_dates, world_cases,
+                         preds[model_predict], 'SVM Predictions', 'purple')
+    elif model_predict == 'Polynomial Regression Predictions':
+        plot_predictions(adjusted_dates, world_cases, preds[model_predict],
+                         'Polynomial Regression Predictions', 'orange')
+    elif model_predict == 'Bayesian Ridge Regression Predictions':
+        plot_predictions(adjusted_dates, world_cases, preds[model_predict],
+                         'Bayesian Ridge Regression Predictions', 'green')
+    else:
+        pass
 
-plot_predictions(adjusted_dates, world_cases,
-                 svm_pred, 'SVM Predictions', 'purple')
-plot_predictions(adjusted_dates, world_cases, linear_pred,
-                 'Polynomial Regression Predictions', 'orange')
+with st.expander('Future Predictions'):
 
-plot_predictions(adjusted_dates, world_cases, linear_pred,
-                 'Bayesian Ridge Regression Predictions', 'green')
+    if model_predict == 'SVM Predictions':
+        st.subheader(f'Future predictions using {model_predict}')
+        svm_df = pd.DataFrame(
+            {'Date': future_forcast_dates[-10:], 'SVM Predicted # of Confirmed Cases Worldwide': np.round(preds[model_predict][-10:])})
 
+        st.dataframe(svm_df.style.background_gradient(cmap='Reds'))
 
-st.subheader('Future predictions using SVM')
-svm_df = pd.DataFrame(
-    {'Date': future_forcast_dates[-10:], 'SVM Predicted # of Confirmed Cases Worldwide': np.round(svm_pred[-10:])})
+    elif model_predict == 'Polynomial Regression Predictions':
+        st.subheader(f'Future predictions using {model_predict}')
+        linear_pred = linear_pred.reshape(1, -1)[0]
+        linear_df = pd.DataFrame(
+            {'Date': future_forcast_dates[-10:], 'Polynomial Predicted # of Confirmed Cases Worldwide': np.round(preds[model_predict][-10:])})
+        st.dataframe(linear_df.style.background_gradient(cmap='Reds'))
 
-st.dataframe(svm_df.style.background_gradient(cmap='Reds'))
+    elif model_predict == 'Bayesian Ridge Regression Predictions':
 
+        st.subheader(f'Future predictions using {model_predict}')
+        bayesian_df = pd.DataFrame(
+            {'Date': future_forcast_dates[-10:], 'Bayesian Ridge Predicted # of Confirmed Cases Worldwide': np.round(preds[model_predict][-10:])})
+        st.dataframe(bayesian_df.style.background_gradient(cmap='Reds'))
 
-st.subheader('Future predictions using polynomial regression')
-linear_pred = linear_pred.reshape(1, -1)[0]
-linear_df = pd.DataFrame(
-    {'Date': future_forcast_dates[-10:], 'Polynomial Predicted # of Confirmed Cases Worldwide': np.round(linear_pred[-10:])})
-st.dataframe(linear_df.style.background_gradient(cmap='Reds'))
+    else:
+        pass
 
-
-st.subheader('Future predictions using Bayesian Ridge')
-bayesian_df = pd.DataFrame(
-    {'Date': future_forcast_dates[-10:], 'Bayesian Ridge Predicted # of Confirmed Cases Worldwide': np.round(bayesian_pred[-10:])})
-st.dataframe(bayesian_df.style.background_gradient(cmap='Reds'))
-
-mean_mortality_rate = np.mean(mortality_rate)
-plt.figure(figsize=(16, 10))
-plt.plot(adjusted_dates, mortality_rate, color='orange')
-plt.axhline(y=mean_mortality_rate, linestyle='--', color='black')
-plt.title('Worldwide Mortality Rate of Coronavirus Over Time', size=30)
-plt.xlabel('Days Since 1/22/2020', size=30)
-plt.ylabel('Case Mortality Rate', size=30)
-plt.xticks(size=20)
-plt.yticks(size=20)
-plt.show()
-st.pyplot(plt)
+with st.expander('Worldwide Mortality Rate of Coronavirus Over Time'):
+    mean_mortality_rate = np.mean(mortality_rate)
+    plt.figure(figsize=(16, 10))
+    plt.plot(adjusted_dates, mortality_rate, color='orange')
+    plt.axhline(y=mean_mortality_rate, linestyle='--', color='black')
+#plt.title('Worldwide Mortality Rate of Coronavirus Over Time', size=30)
+    plt.xlabel('Days Since 1/22/2020', size=30)
+    plt.ylabel('Case Mortality Rate', size=30)
+    plt.xticks(size=20)
+    plt.yticks(size=20)
+    plt.show()
+    st.pyplot(plt)
 
 
 unique_countries = list(latest_data['Country_Region'].unique())
@@ -624,17 +650,18 @@ for i in range(len(unique_countries)):
     country_mortality_rate.append(
         country_death_cases[i]/country_confirmed_cases[i])
 
-st.subheader('Data table')
-st.text('This shows covid data for several countries. The table includes the number of confirmed cases, deaths, incidence rate, and mortality rate.')
+#st.subheader('Data table')
+with st.expander('Worldwide Datatable'):
+    st.markdown("""This shows covid data for several countries. 
+    The table includes the number of confirmed cases, deaths, incidence rate, and mortality rate.""")
 
-
-country_df = pd.DataFrame({'Country Name': unique_countries, 'Number of Confirmed Cases': [format(int(i), ',d') for i in country_confirmed_cases],
-                          'Number of Deaths': [format(int(i), ',d') for i in country_death_cases],
-                           'Incidence Rate': country_incidence_rate,
-                           'Mortality Rate': country_mortality_rate})
+    country_df = pd.DataFrame({'Country Name': unique_countries, 'Number of Confirmed Cases': [format(int(i), ',d') for i in country_confirmed_cases],
+                               'Number of Deaths': [format(int(i), ',d') for i in country_death_cases],
+                               'Incidence Rate': country_incidence_rate,
+                               'Mortality Rate': country_mortality_rate})
 # number of cases per country/region
 
-st.dataframe(country_df.style.background_gradient(cmap='Oranges'))
+    st.dataframe(country_df.style.background_gradient(cmap='Oranges'))
 
 unique_provinces = list(latest_data['Province_State'].unique())
 
@@ -727,36 +754,38 @@ def country_table(country_name):
     return state_df
 
 
-st.subheader('Data table for selected country')
+#st.subheader('Data table for selected country')
+with st.expander(f'Data table for selected country : {add_selectbox}'):
+    india_table = country_table(add_selectbox)
+    st.dataframe(india_table.style.background_gradient(cmap='Oranges'))
 
-india_table = country_table(add_selectbox)
-st.dataframe(india_table.style.background_gradient(cmap='Oranges'))
-
-st.subheader("Bar Chart Visualizations for COVID-19")
-st.write('This offers us some insights for how different countries/regions compare in terms of covid cases.')
+#st.subheader("Bar Chart Visualizations for COVID-19")
 
 total_world_cases = np.sum(country_confirmed_cases)
 us_confirmed = latest_data[latest_data['Country_Region']
-                           == 'US']['Confirmed'].sum()
+                           == add_selectbox]['Confirmed'].sum()
 outside_us_confirmed = total_world_cases - us_confirmed
+with st.expander(f'Bar Chart Visualizations for COVID-19 : {add_selectbox}'):
+    st.markdown(
+        """This offers us some insights for how select countries/regions look on covid cases.""")
+    plt.figure(figsize=(16, 9))
+    plt.barh(add_selectbox, us_confirmed)
+    plt.barh(f'Outside {add_selectbox}', outside_us_confirmed)
+    plt.title('# of Total Coronavirus Confirmed Cases', size=20)
+    plt.xticks(size=20)
+    plt.yticks(size=20)
+    plt.show()
+    st.pyplot(plt)
 
-plt.figure(figsize=(16, 9))
-plt.barh('United States', us_confirmed)
-plt.barh('Outside United States', outside_us_confirmed)
-plt.title('# of Total Coronavirus Confirmed Cases', size=20)
-plt.xticks(size=20)
-plt.yticks(size=20)
-plt.show()
-st.pyplot(plt)
-
-plt.figure(figsize=(16, 9))
-plt.barh('United States', us_confirmed/total_world_cases)
-plt.barh('Outside United States', outside_us_confirmed/total_world_cases)
-plt.title('# of Coronavirus Confirmed Cases Expressed in Percentage', size=20)
-plt.xticks(size=20)
-plt.yticks(size=20)
-plt.show()
-st.pyplot(plt)
+    plt.figure(figsize=(16, 9))
+    plt.barh(add_selectbox, us_confirmed/total_world_cases)
+    plt.barh(f'Outside {add_selectbox}',
+             outside_us_confirmed/total_world_cases)
+    plt.title('# of Coronavirus Confirmed Cases Expressed in Percentage', size=20)
+    plt.xticks(size=20)
+    plt.yticks(size=20)
+    plt.show()
+    st.pyplot(plt)
 
 
 # Only show 10 countries with the most confirmed cases, the rest are grouped into the other category
@@ -771,50 +800,53 @@ for i in range(len(country_confirmed_cases[:10])):
 visual_unique_countries.append('Others')
 visual_confirmed_cases.append(others)
 
+with st.expander('Bar Chart Visualizations for COVID-19  for other countries'):
+    st.markdown(
+        """This offers us some insights for how select countries/regions compare on covid cases.""")
 
-def plot_bar_graphs(x, y, title):
-    plt.figure(figsize=(16, 12))
-    plt.barh(x, y)
-    plt.title(title, size=20)
-    plt.xticks(size=20)
-    plt.yticks(size=20)
-    plt.show()
-    st.pyplot(plt)
+    def plot_bar_graphs(x, y, title):
+        plt.figure(figsize=(16, 12))
+        plt.barh(x, y)
+        plt.title(title, size=20)
+        plt.xticks(size=20)
+        plt.yticks(size=20)
+        plt.show()
+        st.pyplot(plt)
 
 # good for a lot x values
 
+    def plot_bar_graphs_tall(x, y, title):
+        plt.figure(figsize=(19, 18))
+        plt.barh(x, y)
+        plt.title(title, size=25)
+        plt.xticks(size=25)
+        plt.yticks(size=25)
+        plt.show()
+        st.pyplot(plt)
 
-def plot_bar_graphs_tall(x, y, title):
-    plt.figure(figsize=(19, 18))
-    plt.barh(x, y)
-    plt.title(title, size=25)
-    plt.xticks(size=25)
-    plt.yticks(size=25)
-    plt.show()
-    st.pyplot(plt)
+    plot_bar_graphs(visual_unique_countries, visual_confirmed_cases,
+                    '# of Covid-19 Confirmed Cases in Countries/Regions')
 
-
-plot_bar_graphs(visual_unique_countries, visual_confirmed_cases,
-                '# of Covid-19 Confirmed Cases in Countries/Regions')
-
-log_country_confirmed_cases = [math.log10(i) for i in visual_confirmed_cases]
-plot_bar_graphs(visual_unique_countries, log_country_confirmed_cases,
-                'Common Log # of Coronavirus Confirmed Cases in Countries/Regions')
+    log_country_confirmed_cases = [
+        math.log10(i) for i in visual_confirmed_cases]
+    plot_bar_graphs(visual_unique_countries, log_country_confirmed_cases,
+                    'Common Log # of Coronavirus Confirmed Cases in Countries/Regions')
 
 # Only show 10 provinces with the most confirmed cases, the rest are grouped into the other category
-visual_unique_provinces = []
-visual_confirmed_cases2 = []
-others = np.sum(province_confirmed_cases[10:])
-for i in range(len(province_confirmed_cases[:10])):
-    visual_unique_provinces.append(unique_provinces[i])
-    visual_confirmed_cases2.append(province_confirmed_cases[i])
+    visual_unique_provinces = []
+    visual_confirmed_cases2 = []
+    others = np.sum(province_confirmed_cases[10:])
+    for i in range(len(province_confirmed_cases[:10])):
+        visual_unique_provinces.append(unique_provinces[i])
+        visual_confirmed_cases2.append(province_confirmed_cases[i])
 
-visual_unique_provinces.append('Others')
-visual_confirmed_cases2.append(others)
+    visual_unique_provinces.append('Others')
+    visual_confirmed_cases2.append(others)
 
-plot_bar_graphs(visual_unique_provinces, visual_confirmed_cases2,
-                '# of Coronavirus Confirmed Cases in Provinces/States')
+    plot_bar_graphs(visual_unique_provinces, visual_confirmed_cases2,
+                    '# of Coronavirus Confirmed Cases in Provinces/States')
 
-log_province_confirmed_cases = [math.log10(i) for i in visual_confirmed_cases2]
-plot_bar_graphs(visual_unique_provinces, log_province_confirmed_cases,
-                'Log of # of Coronavirus Confirmed Cases in Provinces/States')
+    log_province_confirmed_cases = [
+        math.log10(i) for i in visual_confirmed_cases2]
+    plot_bar_graphs(visual_unique_provinces, log_province_confirmed_cases,
+                    'Log of # of Coronavirus Confirmed Cases in Provinces/States')
